@@ -61,15 +61,15 @@ def tagID3(path, track, save):
         tag.add(TLEN(text=str(int(track.duration)*1000)))
     if save['bpm'] and track.bpm:
         tag.add(TBPM(text=str(track.bpm)))
-    if save['label']:
+    if save['label'] and track.album.label:
         tag.add(TPUB(text=track.album.label))
-    if save['isrc']:
+    if save['isrc'] and track.ISRC:
         tag.add(TSRC(text=track.ISRC))
-    if save['barcode']:
+    if save['barcode'] and track.album.barcode:
         tag.add(TXXX(desc="BARCODE", text=track.album.barcode))
     if save['explicit']:
         tag.add(TXXX(desc="ITUNESADVISORY", text= "1" if track.explicit else "0" ))
-    if save['replayGain']:
+    if save['replayGain'] and track.replayGain:
         tag.add(TXXX(desc="REPLAYGAIN_TRACK_GAIN", text=track.replayGain))
     if track.lyrics.unsync and save['lyrics']:
         tag.add(USLT(text=track.lyrics.unsync))
@@ -99,7 +99,7 @@ def tagID3(path, track, save):
         tag.add(TXXX(desc="SOURCE", text='Deezer'))
         tag.add(TXXX(desc="SOURCEID", text=str(track.id)))
 
-    if save['rating']:
+    if save['rating'] and track.rank:
         rank = round((int(track.rank) / 10000) * 2.55)
         if rank > 255 :
             rank = 255
@@ -181,15 +181,15 @@ def tagFLAC(path, track, save):
         tag["LENGTH"] = str(int(track.duration)*1000)
     if save['bpm'] and track.bpm:
         tag["BPM"] = str(track.bpm)
-    if save['label']:
+    if save['label'] and track.album.label:
         tag["PUBLISHER"] = track.album.label
-    if save['isrc']:
+    if save['isrc'] and track.ISRC:
         tag["ISRC"] = track.ISRC
-    if save['barcode']:
+    if save['barcode'] and track.album.barcode:
         tag["BARCODE"] = track.album.barcode
     if save['explicit']:
         tag["ITUNESADVISORY"] = "1" if track.explicit else "0"
-    if save['replayGain']:
+    if save['replayGain'] and track.replayGain:
         tag["REPLAYGAIN_TRACK_GAIN"] = track.replayGain
     if track.lyrics.unsync and save['lyrics']:
         tag["LYRICS"] = track.lyrics.unsync
@@ -210,7 +210,7 @@ def tagFLAC(path, track, save):
         tag["SOURCE"] = 'Deezer'
         tag["SOURCEID"] = str(track.id)
 
-    if save['rating']:
+    if save['rating'] and track.rank:
         rank = round((int(track.rank) / 10000))
         tag['RATING'] = str(rank)
 
