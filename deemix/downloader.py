@@ -609,7 +609,7 @@ class Downloader:
                 errors += f"{track['error']['data']['id']} | {track['error']['data']['artist']} - {track['error']['data']['title']} | {track['error']['message']}\r\n"
 
             # Log searched to file
-            if 'searched' in track: searched += track['searched'] + "\r\n"
+            if 'searched' in track and isinstance(track['searched'], str): searched += track['searched'] + "\r\n"
 
             # Save Album Cover
             try:
