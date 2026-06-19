@@ -430,15 +430,32 @@ class Downloader:
             if extension == '.mp3':
                 tagID3(writepath, track, self.settings['tags'])
             elif extension == '.flac':
-                try:
-                    tagFLAC(writepath, track, self.settings['tags'])
-                except (FLACNoHeaderError, FLACError):
-                    writepath.unlink()
-                    logger.warning("%s Track not available in FLAC, falling back if necessary", f"{itemData['artist']} - {itemData['title']}")
-                    self.downloadObject.removeTrackProgress(self.listener)
-                    track.filesizes['FILESIZE_FLAC'] = "0"
-                    track.filesizes['FILESIZE_FLAC_TESTED'] = True
-                    return self.download(extraData, track=track)
+                _flacErr = None
+                for _i in range(6):
+                    try:
+                        tagFLAC(writepath, track, self.settings['tags'])
+                        _flacErr = None
+                        break
+                    except (FLACNoHeaderError, FLACError) as _e:
+                        _flacErr = _e
+                        # Transient file lock (e.g. an indexer/AV on a NAS/SMB share): wait and retry tagging
+                        if (getattr(_e, 'errno', None) == errno.EACCES or 'ermission denied' in str(_e) or 'WinError 5' in str(_e)) and _i < 5:
+                            sleep(2)
+                            continue
+                        break
+                if _flacErr is not None:
+                    if getattr(_flacErr, 'errno', None) == errno.EACCES or 'ermission denied' in str(_flacErr) or 'WinError 5' in str(_flacErr):
+                        # The FLAC is fine, just locked by another process: keep it untagged (don't delete, don't re-download)
+                        logger.warning("%s tagging skipped, file kept locked by another process: %s", f"{itemData['artist']} - {itemData['title']}", _flacErr)
+                    else:
+                        # Genuine FLAC error -> delete (resiliently) and fall back to a lower bitrate
+                        try: writepath.unlink()
+                        except OSError: pass
+                        logger.warning("%s Track not available in FLAC, falling back if necessary", f"{itemData['artist']} - {itemData['title']}")
+                        self.downloadObject.removeTrackProgress(self.listener)
+                        track.filesizes['FILESIZE_FLAC'] = "0"
+                        track.filesizes['FILESIZE_FLAC_TESTED'] = True
+                        return self.download(extraData, track=track)
             self.log(itemData, "tagged")
 
         if track.searched: returnData['searched'] = True
