@@ -21,6 +21,22 @@ def fixName(txt, char='_'):
     txt = normalize("NFC", txt)
     return txt
 
+# Max artists rendered in a filename before the tail collapses into "& others".
+# Compilation tracks can list 20+ artists which, joined into the filename, blow
+# past Windows MAX_PATH (260 chars) and make the file unopenable in players that
+# aren't long-path-aware. Tags keep ALL artists (tagger.py is untouched). Parity
+# with tiddl (_join_artists_capped) / OrpheusDL / the deemix-gui Patch E cap.
+MAX_ARTISTS_IN_NAME = 3
+OTHERS_SUFFIX = " & others"
+
+def capArtists(original, names, limit=MAX_ARTISTS_IN_NAME, suffix=OTHERS_SUFFIX, sep=", "):
+    """Keep the original joined string for <= limit artists; otherwise render the
+    first `limit` names + "& others". Only the pathological long case changes."""
+    names = [str(n) for n in names if n]
+    if len(names) <= limit:
+        return original
+    return sep.join(names[:limit]) + suffix
+
 def fixLongName(name):
     def fixEndOfData(bString):
         try:
@@ -133,9 +149,9 @@ def generateTrackName(filename, track, settings):
     c = settings['illegalCharacterReplacer']
     filename = filename.replace("%title%", fixName(track.title, c))
     filename = filename.replace("%artist%", fixName(track.mainArtist.name, c))
-    filename = filename.replace("%artists%", fixName(", ".join(track.artists), c))
-    filename = filename.replace("%allartists%", fixName(track.artistsString, c))
-    filename = filename.replace("%mainartists%", fixName(track.mainArtistsString, c))
+    filename = filename.replace("%artists%", fixName(capArtists(", ".join(track.artists), track.artists), c))
+    filename = filename.replace("%allartists%", fixName(capArtists(track.artistsString, track.artists), c))
+    filename = filename.replace("%mainartists%", fixName(capArtists(track.mainArtistsString, (track.artist or {}).get('Main', [])), c))
     if track.featArtistsString:
         filename = filename.replace("%featartists%", fixName('('+track.featArtistsString+')', c))
     else:

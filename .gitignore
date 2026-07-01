@@ -36,3 +36,7 @@ build
 updatePyPi.sh
 deezer
 .cache
+
+# Local timestamped backups (added 2026-07-01)
+*.bak
+*.bak_*
