@@ -197,6 +197,9 @@ def generateArtistItem(dz, link_id, bitrate, listener=None):
 
     artistDiscographyAPI = dz.gw.get_artist_discography_tabs(link_id, 100)
     allReleases = artistDiscographyAPI.pop('all', [])
+    # Sort oldest-release-first (undated releases sort last) instead of trusting
+    # whatever order the discography endpoint returns.
+    allReleases = sorted(allReleases, key=lambda a: a.get('release_date') or '9999-99-99')
     albumList = []
     for album in allReleases:
         try:
@@ -226,7 +229,10 @@ def generateArtistDiscographyItem(dz, link_id, bitrate, listener=None):
     artistDiscographyAPI.pop('all', None) # all contains albums and singles, so its all duplicates. This removes them
     albumList = []
     for releaseType in artistDiscographyAPI:
-        for album in artistDiscographyAPI[releaseType]:
+        # Sort oldest-release-first (undated releases sort last) instead of
+        # trusting whatever order the discography endpoint returns.
+        releases = sorted(artistDiscographyAPI[releaseType], key=lambda a: a.get('release_date') or '9999-99-99')
+        for album in releases:
             try:
                 albumList.append(generateAlbumItem(dz, album['id'], bitrate, rootArtist=rootArtist))
             except GenerationError as e:
