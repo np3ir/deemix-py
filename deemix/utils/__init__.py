@@ -1,5 +1,6 @@
 import string
 import re
+import unicodedata
 from deezer import TrackFormats
 import os
 from deemix.errors import ErrorMessages
@@ -80,12 +81,27 @@ def andCommaConcat(lst):
                 result += ", "
     return result
 
+def _foldAccents(s):
+    # Strip diacritics for loose comparison — some catalogs spell the same
+    # artist inconsistently across fields (e.g. "Raúl" vs "Raül"), which an
+    # accent-sensitive substring check would miss, leaving a duplicate entry
+    # that should have been recognized as already contained in another name.
+    return "".join(c for c in unicodedata.normalize("NFKD", s) if not unicodedata.combining(c))
+
 def uniqueArray(arr):
-    for iPrinc, namePrinc  in enumerate(arr):
+    # Collect indices to drop instead of mutating `arr` while iterating over
+    # it (the previous `del arr[iRest]` inside a nested `enumerate(arr)` loop
+    # shifted indices out from under the iteration, silently skipping some
+    # comparisons or raising IndexError).
+    toRemove = set()
+    for iPrinc, namePrinc in enumerate(arr):
+        if iPrinc in toRemove:
+            continue
+        foldedPrinc = _foldAccents(namePrinc.lower())
         for iRest, nRest in enumerate(arr):
-            if iPrinc!=iRest and namePrinc.lower() in nRest.lower():
-                del arr[iRest]
-    return arr
+            if iPrinc != iRest and iRest not in toRemove and foldedPrinc in _foldAccents(nRest.lower()):
+                toRemove.add(iRest)
+    return [name for i, name in enumerate(arr) if i not in toRemove]
 
 def removeDuplicateArtists(artist, artists):
     artists = uniqueArray(artists)
