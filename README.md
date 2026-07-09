@@ -1,4 +1,8 @@
 # ![](./icon.svg) deemix
+
+> [!WARNING]
+> **This app is for personal, educational, and archival purposes only.** It is not affiliated with Deezer. Users must ensure their use complies with Deezer's terms of service and all applicable local copyright laws. Downloaded content is for personal use and may not be shared or redistributed. The developer assumes no responsibility for misuse of this app.
+
 ## What is deemix?
 deemix is a deezer downloader built from the ashes of Deezloader Remix. The base library (or core) can be used as a stand alone CLI app or implemented in an UI using the API.
 
