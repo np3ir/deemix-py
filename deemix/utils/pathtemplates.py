@@ -15,8 +15,18 @@ bitrateLabels = {
     TrackFormats.LOCAL  : "MP3"
 }
 
+# Unicode dash/hyphen lookalikes -> ASCII hyphen. Deezer (like other services)
+# sometimes uses these instead of "-"; normalizing keeps names identical across
+# sources/tools (matches tiddl). Covers hyphen, non-breaking hyphen, figure/en/em
+# dash, horizontal bar and minus sign.
+DASH_TO_HYPHEN = str.maketrans({
+    "‐": "-", "‑": "-", "‒": "-", "–": "-",
+    "—": "-", "―": "-", "−": "-",
+})
+
 def fixName(txt, char='_'):
     txt = str(txt)
+    txt = txt.translate(DASH_TO_HYPHEN)
     txt = re.sub(r'[\0\/\\:*?"<>|]', char, txt)
     txt = normalize("NFC", txt)
     return txt
